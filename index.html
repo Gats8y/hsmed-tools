@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="合順支出">
+<title>合順本草｜支出登記</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:    #1e2d25;
+    --forest: #2d4a3e;
+    --moss:   #4a7c68;
+    --sage:   #7aab96;
+    --mist:   #d6eae1;
+    --cream:  #faf7f0;
+    --parch:  #f2ede3;
+    --gold:   #c9973a;
+    --gold-l: #f0c060;
+    --red:    #8b2020;
+    --white:  #ffffff;
+    --shadow: rgba(45,74,62,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--cream);
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(122,171,150,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 90%, rgba(201,151,58,0.08) 0%, transparent 50%);
+    min-height: 100vh;
+    font-family: 'Noto Sans TC', sans-serif;
+    color: var(--ink);
+    padding: 0 0 60px;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--forest);
+    padding: 28px 24px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -20px; left: 30%;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: rgba(201,151,58,0.08);
+  }
+  .brand {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--sage);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    font-size: 12px;
+    color: var(--sage);
+    margin-top: 4px;
+    font-weight: 300;
+  }
+
+  /* ── Form card ── */
+  .card {
+    margin: 20px 16px 0;
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px var(--shadow);
+    overflow: hidden;
+  }
+
+  .card-section {
+    padding: 20px 20px 4px;
+    border-bottom: 1px solid var(--mist);
+  }
+  .card-section:last-of-type { border-bottom: none; padding-bottom: 20px; }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--moss);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  /* ── Fields ── */
+  .field { margin-bottom: 16px; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--forest);
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+  }
+  label .req { color: var(--red); margin-left: 2px; }
+  label .hint {
+    font-weight: 300;
+    color: var(--sage);
+    font-size: 11px;
+    margin-left: 4px;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    border: 1.5px solid var(--mist);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--cream);
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--moss);
+    background: var(--white);
+    box-shadow: 0 0 0 3px rgba(74,124,104,0.12);
+  }
+  input[type="date"] { color: var(--ink); }
+  input[type="number"] { font-weight: 600; color: var(--forest); font-size: 18px; }
+
+  /* amount with prefix */
+  .amount-wrap { position: relative; }
+  .amount-prefix {
+    position: absolute;
+    left: 14px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--sage);
+    pointer-events: none;
+  }
+  .amount-wrap input { padding-left: 36px; }
+
+  /* select arrow */
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '▾';
+    position: absolute;
+    right: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--moss);
+    font-size: 14px;
+    pointer-events: none;
+  }
+  select { padding-right: 36px; cursor: pointer; }
+
+  /* receipt toggle */
+  .receipt-toggle { display: flex; gap: 10px; }
+  .receipt-btn {
+    flex: 1;
+    padding: 11px 8px;
+    border: 1.5px solid var(--mist);
+    border-radius: 10px;
+    background: var(--cream);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.18s;
+    font-weight: 400;
+  }
+  .receipt-btn.selected-yes {
+    background: rgba(74,124,104,0.1);
+    border-color: var(--moss);
+    color: var(--forest);
+    font-weight: 500;
+  }
+  .receipt-btn.selected-no {
+    background: rgba(139,32,32,0.07);
+    border-color: #c97070;
+    color: var(--red);
+    font-weight: 500;
+  }
+
+  textarea { resize: none; height: 72px; font-size: 14px; }
+
+  /* ── Submit button ── */
+  .submit-wrap { padding: 16px; }
+  .btn-submit {
+    width: 100%;
+    padding: 16px;
+    background: var(--forest);
+    color: var(--white);
+    border: none;
+    border-radius: 12px;
+    font-family: 'Noto Serif TC', serif;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-submit:active { transform: scale(0.98); }
+  .btn-submit:disabled {
+    background: var(--sage);
+    cursor: not-allowed;
+  }
+  .btn-submit .spinner {
+    display: none;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Success overlay ── */
+  .success-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(30,45,37,0.85);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  .success-overlay.show { display: flex; }
+  .success-box {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 40px 32px;
+    text-align: center;
+    max-width: 300px;
+    width: 85%;
+    animation: popIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes popIn {
+    from { transform: scale(0.7); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+  .success-icon {
+    width: 64px; height: 64px;
+    background: var(--mist);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 28px;
+  }
+  .success-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--forest);
+    margin-bottom: 8px;
+  }
+  .success-sub {
+    font-size: 13px;
+    color: var(--sage);
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+  .success-item-name {
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .success-item-amt {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--forest);
+    margin: 8px 0 4px;
+  }
+  .btn-again {
+    width: 100%;
+    padding: 14px;
+    background: var(--forest);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Noto Serif TC', serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+  }
+
+  /* ── Error toast ── */
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--red);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 200;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 11px;
+    color: var(--sage);
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="brand">He Shun Herb · 合順本草</div>
+  <div class="title">支出登記</div>
+  <div class="subtitle">填完送出，資料自動存入雲端 ☁️</div>
+</div>
+
+<form id="expenseForm">
+
+  <!-- 基本資訊 -->
+  <div class="card">
+    <div class="card-section">
+      <div class="section-label">基本資訊</div>
+
+      <div class="field">
+        <label>日期 <span class="req">*</span></label>
+        <input type="date" id="date" required>
+      </div>
+
+      <div class="field">
+        <label>商品／項目 <span class="req">*</span> <span class="hint">買了什麼？</span></label>
+        <input type="text" id="item" placeholder="例如：打雲機、Google Ads 費用…" required>
+      </div>
+
+      <div class="field">
+        <label>金額 <span class="req">*</span> <span class="hint">只填數字</span></label>
+        <div class="amount-wrap">
+          <span class="amount-prefix">NT$</span>
+          <input type="number" id="amount" placeholder="0" min="0" required>
+        </div>
+      </div>
+    </div>
+
+    <!-- 補充資訊 -->
+    <div class="card-section">
+      <div class="section-label">補充資訊</div>
+
+      <div class="field">
+        <label>收款人／廠商 <span class="hint">選填</span></label>
+        <input type="text" id="vendor" placeholder="例如：MOMO、Google、蝦皮…">
+      </div>
+
+      <div class="field">
+        <label>費用類別 <span class="req">*</span></label>
+        <div class="select-wrap">
+          <select id="category" required>
+            <option value="" disabled selected>請選擇類別 ▾</option>
+            <option>藥材原料</option>
+            <option>包裝耗材</option>
+            <option>物流運費</option>
+            <option>薪資人事</option>
+            <option>廣告投放</option>
+            <option>印刷製作</option>
+            <option>平台工具訂閱</option>
+            <option>門市費用</option>
+            <option>活動市集</option>
+            <option>業務交際</option>
+            <option>工具器具</option>
+            <option>修繕維護</option>
+            <option>稅務帳務</option>
+            <option>專案費用A</option>
+            <option>專案費用B</option>
+            <option>其他支出</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>有收據？ <span class="req">*</span></label>
+        <div class="receipt-toggle">
+          <button type="button" class="receipt-btn" id="btn-yes" onclick="selectReceipt('✓ 有')">✓ 有</button>
+          <button type="button" class="receipt-btn" id="btn-no"  onclick="selectReceipt('✗ 沒有')">✗ 沒有</button>
+        </div>
+        <input type="hidden" id="receipt" value="">
+      </div>
+
+      <div class="field">
+        <label>備註 <span class="hint">選填，可以寫訂單編號、說明等</span></label>
+        <textarea id="note" placeholder="例如：5月份廣告費、訂單 #12345…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="submit-wrap">
+    <button type="submit" class="btn-submit" id="submitBtn">
+      <span id="btnText">送出登記</span>
+      <div class="spinner" id="spinner"></div>
+    </button>
+  </div>
+
+</form>
+
+<div class="footer">合順本草內部系統 · 資料加密傳輸</div>
+
+<!-- Success overlay -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-box">
+    <div class="success-icon">✅</div>
+    <div class="success-title">登記成功！</div>
+    <div class="success-sub">
+      <span class="success-item-name" id="s-item"></span><br>
+      <span class="success-item-amt" id="s-amt"></span>
+      <span style="font-size:13px;color:var(--sage)"> 元</span><br>
+      已存入雲端試算表
+    </div>
+    <button class="btn-again" onclick="resetForm()">繼續登記下一筆</button>
+  </div>
+</div>
+
+<!-- Error toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzNm18qZ3B0nfR9xu0nmbB37nbhr_ltq5IKUgMjC9qUgKgecl7eI74SYhMNmk6UmitCQw/exec";
+
+// Set today's date as default
+document.getElementById('date').valueAsDate = new Date();
+
+function selectReceipt(val) {
+  document.getElementById('receipt').value = val;
+  document.getElementById('btn-yes').className = 'receipt-btn' + (val === '✓ 有' ? ' selected-yes' : '');
+  document.getElementById('btn-no').className  = 'receipt-btn' + (val === '✗ 沒有' ? ' selected-no' : '');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+document.getElementById('expenseForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const date     = document.getElementById('date').value;
+  const item     = document.getElementById('item').value.trim();
+  const amount   = document.getElementById('amount').value;
+  const vendor   = document.getElementById('vendor').value.trim();
+  const category = document.getElementById('category').value;
+  const receipt  = document.getElementById('receipt').value;
+  const note     = document.getElementById('note').value.trim();
+
+  if (!date || !item || !amount || !category) {
+    showToast('⚠️ 請填寫所有必填欄位');
+    return;
+  }
+  if (!receipt) {
+    showToast('⚠️ 請選擇是否有收據');
+    return;
+  }
+  if (parseFloat(amount) <= 0) {
+    showToast('⚠️ 金額請填大於 0 的數字');
+    return;
+  }
+
+  // loading state
+  const btn = document.getElementById('submitBtn');
+  document.getElementById('btnText').style.display = 'none';
+  document.getElementById('spinner').style.display = 'block';
+  btn.disabled = true;
+
+  const payload = { date, item, amount: parseFloat(amount), vendor, category, receipt, note };
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    // show success
+    document.getElementById('s-item').textContent = item;
+    document.getElementById('s-amt').textContent = parseFloat(amount).toLocaleString();
+    document.getElementById('successOverlay').classList.add('show');
+
+  } catch (err) {
+    showToast('⚠️ 送出失敗，請確認網路後再試一次');
+  } finally {
+    document.getElementById('btnText').style.display = 'block';
+    document.getElementById('spinner').style.display = 'none';
+    btn.disabled = false;
+  }
+});
+
+function resetForm() {
+  document.getElementById('successOverlay').classList.remove('show');
+  document.getElementById('expenseForm').reset();
+  document.getElementById('date').valueAsDate = new Date();
+  document.getElementById('receipt').value = '';
+  document.getElementById('btn-yes').className = 'receipt-btn';
+  document.getElementById('btn-no').className  = 'receipt-btn';
+}
+</script>
+</body>
+</html>
