@@ -360,7 +360,7 @@
 
       <div class="field">
         <label>商品／項目 <span class="req">*</span> <span class="hint">買了什麼？</span></label>
-        <input type="text" id="item" placeholder="例如：打雲機、Google Ads 費用…" required>
+        <input type="text" id="item" placeholder="例如：藥材進貨、Google Ads 費用…" required>
       </div>
 
       <div class="field">
@@ -418,6 +418,11 @@
       <div class="field">
         <label>備註 <span class="hint">選填，可以寫訂單編號、說明等</span></label>
         <textarea id="note" placeholder="例如：5月份廣告費、訂單 #12345…"></textarea>
+      </div>
+
+      <div class="field">
+        <label>填寫人 <span class="hint">選填，寫你的名字</span></label>
+        <input type="text" id="filler" placeholder="例如：Kuma、阿元…">
       </div>
     </div>
   </div>
@@ -480,6 +485,7 @@ document.getElementById('expenseForm').addEventListener('submit', async function
   const category = document.getElementById('category').value;
   const receipt  = document.getElementById('receipt').value;
   const note     = document.getElementById('note').value.trim();
+  const filler   = document.getElementById('filler').value.trim();
 
   if (!date || !item || !amount || !category) {
     showToast('⚠️ 請填寫所有必填欄位');
@@ -500,7 +506,7 @@ document.getElementById('expenseForm').addEventListener('submit', async function
   document.getElementById('spinner').style.display = 'block';
   btn.disabled = true;
 
-  const payload = { date, item, amount: parseFloat(amount), vendor, category, receipt, note };
+  const payload = { date, item, amount: parseFloat(amount), vendor, category, receipt, note, filler };
 
   try {
     await fetch(SCRIPT_URL, {
