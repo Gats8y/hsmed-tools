@@ -175,20 +175,21 @@
   select { padding-right: 36px; cursor: pointer; }
 
   /* receipt toggle */
-  .receipt-toggle { display: flex; gap: 10px; }
+  .receipt-toggle { display: flex; gap: 8px; }
   .receipt-btn {
     flex: 1;
-    padding: 11px 8px;
+    padding: 11px 4px;
     border: 1.5px solid var(--mist);
     border-radius: 10px;
     background: var(--cream);
     font-family: 'Noto Sans TC', sans-serif;
-    font-size: 14px;
+    font-size: 13.5px;
     color: var(--ink);
     cursor: pointer;
     text-align: center;
     transition: all 0.18s;
     font-weight: 400;
+    white-space: nowrap;
   }
   .receipt-btn.selected-yes {
     background: rgba(74,124,104,0.1);
@@ -201,6 +202,65 @@
     border-color: #c97070;
     color: var(--red);
     font-weight: 500;
+  }
+
+  /* photo upload */
+  .photo-field {
+    /* revealed only when 實體/電子 收據 is chosen */
+    animation: fadeSlide 0.25s ease;
+  }
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .photo-add-btn {
+    width: 100%;
+    padding: 13px;
+    border: 1.5px dashed var(--sage);
+    border-radius: 10px;
+    background: rgba(122,171,150,0.06);
+    color: var(--moss);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .photo-add-btn:active { transform: scale(0.99); background: rgba(122,171,150,0.12); }
+  .photo-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .photo-thumb {
+    position: relative;
+    width: 64px; height: 64px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1.5px solid var(--mist);
+    background: var(--parch);
+  }
+  .photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo-remove {
+    position: absolute;
+    top: 2px; right: 2px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(30,45,37,0.78);
+    color: #fff;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0;
+  }
+  .photo-count {
+    font-size: 11px;
+    color: var(--sage);
+    margin-top: 6px;
+    font-weight: 300;
   }
 
   textarea { resize: none; height: 72px; font-size: 14px; }
@@ -407,12 +467,23 @@
       </div>
 
       <div class="field">
-        <label>有收據？ <span class="req">*</span></label>
+        <label>收據狀態 <span class="req">*</span></label>
         <div class="receipt-toggle">
-          <button type="button" class="receipt-btn" id="btn-yes" onclick="selectReceipt('✓ 有')">✓ 有</button>
-          <button type="button" class="receipt-btn" id="btn-no"  onclick="selectReceipt('✗ 沒有')">✗ 沒有</button>
+          <button type="button" class="receipt-btn" id="btn-phys" onclick="selectReceipt('實體收據')">實體收據</button>
+          <button type="button" class="receipt-btn" id="btn-elec" onclick="selectReceipt('電子收據')">電子收據</button>
+          <button type="button" class="receipt-btn" id="btn-none" onclick="selectReceipt('無')">無</button>
         </div>
         <input type="hidden" id="receipt" value="">
+      </div>
+
+      <div class="field photo-field" id="photoField" style="display:none;">
+        <label>收據照片 <span class="hint">可多張，選填</span></label>
+        <input type="file" id="photoInput" accept="image/*" multiple hidden>
+        <button type="button" class="photo-add-btn" onclick="document.getElementById('photoInput').click()">
+          📷 拍照或選擇照片
+        </button>
+        <div class="photo-preview" id="photoPreview"></div>
+        <div class="photo-count" id="photoCount"></div>
       </div>
 
       <div class="field">
@@ -462,10 +533,73 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzICL1SeM-f9DX8GOY-2
 // Set today's date as default
 document.getElementById('date').valueAsDate = new Date();
 
+let selectedPhotos = []; // File objects
+
 function selectReceipt(val) {
   document.getElementById('receipt').value = val;
-  document.getElementById('btn-yes').className = 'receipt-btn' + (val === '✓ 有' ? ' selected-yes' : '');
-  document.getElementById('btn-no').className  = 'receipt-btn' + (val === '✗ 沒有' ? ' selected-no' : '');
+  document.getElementById('btn-phys').className = 'receipt-btn' + (val === '實體收據' ? ' selected-yes' : '');
+  document.getElementById('btn-elec').className = 'receipt-btn' + (val === '電子收據' ? ' selected-yes' : '');
+  document.getElementById('btn-none').className = 'receipt-btn' + (val === '無' ? ' selected-no' : '');
+
+  const showPhoto = (val === '實體收據' || val === '電子收據');
+  document.getElementById('photoField').style.display = showPhoto ? 'block' : 'none';
+  if (!showPhoto) { selectedPhotos = []; renderPhotos(); }
+}
+
+// ── Photo selection & preview ──
+document.getElementById('photoInput').addEventListener('change', function(e) {
+  for (const f of e.target.files) {
+    if (f.type.startsWith('image/')) selectedPhotos.push(f);
+  }
+  this.value = ''; // allow re-picking the same file
+  renderPhotos();
+});
+
+function renderPhotos() {
+  const wrap = document.getElementById('photoPreview');
+  const count = document.getElementById('photoCount');
+  wrap.innerHTML = '';
+  selectedPhotos.forEach((file, idx) => {
+    const div = document.createElement('div');
+    div.className = 'photo-thumb';
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    const rm = document.createElement('button');
+    rm.type = 'button';
+    rm.className = 'photo-remove';
+    rm.textContent = '✕';
+    rm.onclick = () => { selectedPhotos.splice(idx, 1); renderPhotos(); };
+    div.appendChild(img);
+    div.appendChild(rm);
+    wrap.appendChild(div);
+  });
+  count.textContent = selectedPhotos.length ? ('已選 ' + selectedPhotos.length + ' 張') : '';
+}
+
+// ── Compress an image file → base64 (no data: prefix) ──
+function compressImage(file, maxDim = 1600, quality = 0.7) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > height && width > maxDim)      { height = Math.round(height * maxDim / width); width = maxDim; }
+        else if (height >= width && height > maxDim){ width = Math.round(width * maxDim / height); height = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        try {
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          resolve(dataUrl.split(',')[1]);
+        } catch (err) { reject(err); }
+      };
+      img.onerror = () => reject(new Error('image decode failed'));
+      img.src = ev.target.result;
+    };
+    reader.onerror = () => reject(new Error('file read failed'));
+    reader.readAsDataURL(file);
+  });
 }
 
 function showToast(msg) {
@@ -506,7 +640,21 @@ document.getElementById('expenseForm').addEventListener('submit', async function
   document.getElementById('spinner').style.display = 'block';
   btn.disabled = true;
 
-  const payload = { date, item, amount: parseFloat(amount), vendor, category, receipt, note, filler };
+  // compress photos (only kept when 實體/電子 收據 selected)
+  let photos = [];
+  try {
+    if ((receipt === '實體收據' || receipt === '電子收據') && selectedPhotos.length) {
+      photos = await Promise.all(selectedPhotos.map(f => compressImage(f)));
+    }
+  } catch (err) {
+    document.getElementById('btnText').style.display = 'block';
+    document.getElementById('spinner').style.display = 'none';
+    btn.disabled = false;
+    showToast('⚠️ 照片處理失敗，請換一張或稍後再試');
+    return;
+  }
+
+  const payload = { date, item, amount: parseFloat(amount), vendor, category, receipt, note, filler, photos };
 
   try {
     await fetch(SCRIPT_URL, {
@@ -535,8 +683,12 @@ function resetForm() {
   document.getElementById('expenseForm').reset();
   document.getElementById('date').valueAsDate = new Date();
   document.getElementById('receipt').value = '';
-  document.getElementById('btn-yes').className = 'receipt-btn';
-  document.getElementById('btn-no').className  = 'receipt-btn';
+  document.getElementById('btn-phys').className = 'receipt-btn';
+  document.getElementById('btn-elec').className = 'receipt-btn';
+  document.getElementById('btn-none').className = 'receipt-btn';
+  selectedPhotos = [];
+  renderPhotos();
+  document.getElementById('photoField').style.display = 'none';
 }
 </script>
 </body>
