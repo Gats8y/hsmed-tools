@@ -1,0 +1,17 @@
+name = "line-cs-bot"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+# 先執行：npx wrangler kv namespace create STATE，把回傳的 id 貼到下面
+[[kv_namespaces]]
+binding = "STATE"
+id = "REPLACE_WITH_KV_ID"
+
+[vars]
+CLAUDE_MODEL = "claude-opus-5-5"
+# STAFF_WEBHOOK_KIND = "slack"   # slack | discord | googlechat
+# FORWARD_WEBHOOK_URLS = ""      # 原本 LINE Developers 後台填的 webhook 網址
+
+# 機密資料用 wrangler secret put 設定，不要寫在這裡：
+# LINE_CHANNEL_SECRET, LINE_CHANNEL_ACCESS_TOKEN, ANTHROPIC_API_KEY,
+# SHOPLINE_ACCESS_TOKEN, STAFF_WEBHOOK_URL
