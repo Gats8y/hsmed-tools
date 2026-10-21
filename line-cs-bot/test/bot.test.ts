@@ -4,7 +4,7 @@ import type { Classification } from "../src/classify";
 import { sanitize } from "../src/classify";
 import type { LineEvent } from "../src/line";
 import { describeTime, isStaffed, nextStaffedTime, specialistEta } from "../src/schedule";
-import { toRecord, type ShopifyOrder } from "../src/shopify";
+import { toRecord, type ShoplineOrder } from "../src/shopline";
 
 // 台灣時間 → Date
 const tpe = (s: string) => new Date(`${s}+08:00`);
@@ -22,25 +22,17 @@ class MemKV implements KV {
   }
 }
 
-const SHOPIFY_ORDER: ShopifyOrder = {
-  name: "#1001",
-  createdAt: "2026-10-18T02:00:00Z",
-  cancelledAt: null,
-  displayFinancialStatus: "PAID",
-  displayFulfillmentStatus: "FULFILLED",
-  phone: null,
-  shippingAddress: { phone: "+886912345678" },
-  billingAddress: null,
-  fulfillments: [
-    {
-      displayStatus: "IN_TRANSIT",
-      createdAt: "2026-10-19T03:00:00Z",
-      deliveredAt: null,
-      trackingInfo: [{ company: "黑貓宅急便", number: "F123", url: null }],
-    },
-  ],
+const SHOPLINE_ORDER: ShoplineOrder = {
+  id: "o1",
+  order_number: "20261018123456789",
+  status: "confirmed",
+  created_at: "2026-10-18T02:00:00Z",
+  customer_phone: "0912345678",
+  order_payment: { status: "completed" },
+  order_delivery: { status: "shipped", name_translations: { "zh-hant": "7-11 取貨" }, shipped_at: "2026-10-19T03:00:00Z" },
+  delivery_data: { tracking_number: "F123", location_name: "台北門市" },
 };
-const ORDER = toRecord(SHOPIFY_ORDER);
+const ORDER = toRecord(SHOPLINE_ORDER);
 
 function setup(now: string, cls: Partial<Classification> | ((t: string) => Partial<Classification>), opts: { lookupThrows?: boolean } = {}) {
   const kv = new MemKV();
@@ -128,25 +120,25 @@ describe("分流", () => {
 
   it("查單：分兩次給資料，查到後回訂單資訊、不含個資", async () => {
     const { deps, replies } = setup("2026-10-20T23:00:00", (t) =>
-      t.includes("1001") ? { intent: "other", orderNumber: "1001", phoneLast: "678" } : { intent: "order" },
+      t.includes("20261018123456789") ? { intent: "other", orderNumber: "20261018123456789", phoneLast: "678" } : { intent: "order" },
     );
     expect(await handleEvent(deps, msg("我的貨到了嗎"))).toBe("ask_order_info");
-    expect(await handleEvent(deps, msg("1001 678"))).toBe("order_found");
-    expect(replies[1]).toContain("運送中");
+    expect(await handleEvent(deps, msg("20261018123456789 678"))).toBe("order_found");
+    expect(replies[1]).toContain("已出貨");
     expect(replies[1]).toContain("F123");
     expect(replies[1]).not.toContain("0912");
   });
 
   it("查單：手機末碼錯兩次就轉真人", async () => {
-    const { deps, alerts } = setup("2026-10-20T15:00:00", { intent: "order", orderNumber: "1001", phoneLast: "111" });
-    expect(await handleEvent(deps, msg("1001 111"))).toBe("order_not_matched");
-    expect(await handleEvent(deps, msg("1001 111"))).toBe("order_handoff");
+    const { deps, alerts } = setup("2026-10-20T15:00:00", { intent: "order", orderNumber: "20261018123456789", phoneLast: "111" });
+    expect(await handleEvent(deps, msg("20261018123456789 111"))).toBe("order_not_matched");
+    expect(await handleEvent(deps, msg("20261018123456789 111"))).toBe("order_handoff");
     expect(alerts).toHaveLength(1);
   });
 
   it("查單系統掛了：轉真人", async () => {
-    const { deps, alerts } = setup("2026-10-20T15:00:00", { intent: "order", orderNumber: "1001", phoneLast: "678" }, { lookupThrows: true });
-    expect(await handleEvent(deps, msg("1001 678"))).toBe("order_error");
+    const { deps, alerts } = setup("2026-10-20T15:00:00", { intent: "order", orderNumber: "20261018123456789", phoneLast: "678" }, { lookupThrows: true });
+    expect(await handleEvent(deps, msg("20261018123456789 678"))).toBe("order_error");
     expect(alerts).toHaveLength(1);
   });
 
@@ -173,13 +165,13 @@ describe("AI 輸出檢查", () => {
   });
 });
 
-describe("Shopify 訂單格式", () => {
-  it("已取消的訂單只顯示已取消", () => {
-    const r = toRecord({ ...SHOPIFY_ORDER, cancelledAt: "2026-10-19T00:00:00Z" });
-    expect(r.summary).toContain("已取消");
-    expect(r.summary).not.toContain("F123");
+describe("SHOPLINE 訂單格式", () => {
+  it("回覆不含電話、含物流資訊", () => {
+    expect(ORDER.summary).toContain("7-11 取貨");
+    expect(ORDER.summary).toContain("台北門市");
+    expect(ORDER.summary).not.toContain("0912");
   });
-  it("訂單編號去掉 #", () => {
-    expect(ORDER.number).toBe("1001");
+  it("已取消的訂單顯示已取消", () => {
+    expect(toRecord({ ...SHOPLINE_ORDER, status: "cancelled" }).summary).toContain("已取消");
   });
 });

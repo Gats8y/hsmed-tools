@@ -1,4 +1,4 @@
-// 電商平台無關的訂單介面。目前實作是 Shopify（src/shopify.ts），換平台只要另寫一個 OrderLookup。
+// 電商平台無關的訂單介面。目前實作是 SHOPLINE（src/shopline.ts），換平台只要另寫一個 OrderLookup。
 
 export interface OrderRecord {
   /** 客人看到的訂單編號 */

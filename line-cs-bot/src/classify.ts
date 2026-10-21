@@ -18,7 +18,7 @@ const SYSTEM_PROMPT = `你是醫療保健商品品牌 LINE 客服的訊息分類
 規則：
 - 同時有訂單問題和身體／藥效問題時，選 "medical"。
 - 不確定時選 "other"，不要猜。
-- orderNumber：只有客人訊息中「原文出現」的訂單編號才填，去掉開頭的 #，否則填 null。不要推測或補字。
+- orderNumber：只有客人訊息中「原文出現」的訂單編號才填，否則填 null。不要推測或補字。
 - phoneLast：客人提供的手機末幾碼（3 到 4 位數字），原文沒有就填 null。`;
 
 const SCHEMA = {

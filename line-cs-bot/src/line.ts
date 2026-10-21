@@ -37,7 +37,7 @@ export async function reply(accessToken: string, replyToken: string, text: strin
 }
 
 /**
- * 原本已經接在 LINE OA 上的系統（例如 Shopify 上的 LINE 串接 App）如果也用 webhook，
+ * 原本已經接在 LINE OA 上的系統（例如 SHOPLINE 的 LINE 串接）如果也用 webhook，
  * LINE 一個頻道只能填一個 webhook 網址，所以由這裡原封不動轉發，簽章不變、對方照常驗證。
  */
 export async function forward(urls: string[], body: string, signature: string): Promise<void> {

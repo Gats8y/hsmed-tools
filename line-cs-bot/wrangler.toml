@@ -9,12 +9,9 @@ id = "REPLACE_WITH_KV_ID"
 
 [vars]
 CLAUDE_MODEL = "claude-opus-5-5"
-SHOPIFY_SHOP = "REPLACE_WITH_STORE"   # xxx.myshopify.com 的 xxx
 # STAFF_WEBHOOK_KIND = "slack"   # slack | discord | googlechat
 # FORWARD_WEBHOOK_URLS = ""      # 原本 LINE Developers 後台填的 webhook 網址
 
 # 機密資料用 wrangler secret put 設定，不要寫在這裡：
 # LINE_CHANNEL_SECRET, LINE_CHANNEL_ACCESS_TOKEN, ANTHROPIC_API_KEY,
-# STAFF_WEBHOOK_URL，以及 Shopify 二擇一：
-#   SHOPIFY_ACCESS_TOKEN（舊版自訂 App 的 shpat_ token）
-#   或 SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET（Dev Dashboard App）
+# SHOPLINE_ACCESS_TOKEN, STAFF_WEBHOOK_URL

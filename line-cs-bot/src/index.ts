@@ -3,17 +3,14 @@ import { handleEvent, type Deps } from "./bot";
 import { classify } from "./classify";
 import { forward, reply, verifySignature, type LineEvent } from "./line";
 import { notifyStaff } from "./notify";
-import { shopifyLookup } from "./shopify";
+import { shoplineLookup } from "./shopline";
 
 export interface Env {
   STATE: KVNamespace;
   LINE_CHANNEL_SECRET: string;
   LINE_CHANNEL_ACCESS_TOKEN: string;
   ANTHROPIC_API_KEY: string;
-  SHOPIFY_SHOP: string;
-  SHOPIFY_ACCESS_TOKEN?: string;
-  SHOPIFY_CLIENT_ID?: string;
-  SHOPIFY_CLIENT_SECRET?: string;
+  SHOPLINE_ACCESS_TOKEN: string;
   CLAUDE_MODEL?: string;
   STAFF_WEBHOOK_URL?: string;
   STAFF_WEBHOOK_KIND?: string;
@@ -39,15 +36,7 @@ export default {
     const deps: Deps = {
       kv: env.STATE,
       classify: (text) => classify(client, model, text),
-      lookup: shopifyLookup(
-        {
-          shop: env.SHOPIFY_SHOP,
-          accessToken: env.SHOPIFY_ACCESS_TOKEN,
-          clientId: env.SHOPIFY_CLIENT_ID,
-          clientSecret: env.SHOPIFY_CLIENT_SECRET,
-        },
-        env.STATE,
-      ),
+      lookup: shoplineLookup(env.SHOPLINE_ACCESS_TOKEN),
       reply: (token, text) => reply(env.LINE_CHANNEL_ACCESS_TOKEN, token, text),
       notify: (alert) => notifyStaff(env.STAFF_WEBHOOK_URL, env.STAFF_WEBHOOK_KIND, alert),
       now: () => new Date(),
