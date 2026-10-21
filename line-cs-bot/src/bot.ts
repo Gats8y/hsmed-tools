@@ -5,7 +5,7 @@ import { CONFIG } from "./config";
 import type { LineEvent } from "./line";
 import type { StaffAlert } from "./notify";
 import { describeTime, isStaffed, nextStaffedTime, specialistEta } from "./schedule";
-import { formatOrder, phoneMatches, type OrderLookup } from "./shopline";
+import { phoneMatches, type OrderLookup } from "./orders";
 import { pick } from "./templates";
 
 export interface KV {
@@ -124,7 +124,7 @@ export async function handleEvent(deps: Deps, ev: LineEvent): Promise<Outcome> {
     }
 
     if (order && phoneMatches(order, phoneLast)) {
-      await deps.reply(replyToken, formatOrder(order));
+      await deps.reply(replyToken, order.summary);
       await saveState(deps.kv, userId, {});
       return "order_found";
     }
